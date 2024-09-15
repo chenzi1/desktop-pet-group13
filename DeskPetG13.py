@@ -3,7 +3,7 @@ import sys
 import os
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QDesktopWidget, QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QVBoxLayout
 
 
 class DeskPetG13(QtWidgets.QLabel):
@@ -22,6 +22,25 @@ class DeskPetG13(QtWidgets.QLabel):
         self.currentAction = self.startIdle
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.updateAnimation)
+        self.setWindowTitle('DeskPet')
+
+        layout = QtWidgets.QVBoxLayout()
+
+        # self added to the layout
+        self.label = QtWidgets.QLabel(self)
+        layout.addWidget(self.label)
+
+        # Add a single-line text input box
+        self.textBox = QtWidgets.QLineEdit(self)
+        # Set the position of the textbox
+        self.textBox.setGeometry(100, 10, 100, 100)
+        self.textBox.setStyleSheet("background-color: white; color: black;")
+        # Set size of the textbox
+        self.textBox.setFixedSize(80,20)
+        layout = QVBoxLayout(self.textBox)
+        self.textBox.returnPressed.connect(self.onReturnPressed)
+
+        self.setLayout(layout)
         self.startIdle()
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showMenu)
@@ -31,6 +50,12 @@ class DeskPetG13(QtWidgets.QLabel):
         self.popup_timer = QTimer(self)
         # Connect timer to a function
         self.popup_timer.timeout.connect(self.show_popup)
+
+
+    def onReturnPressed(self):
+        inputText = self.textBox.text()
+        self.handleInput(inputText)
+        self.textBox.clear()
 
     def loadImages(self, path):
         return [QtGui.QPixmap(os.path.join(path, f)) for f in os.listdir(path) if f.endswith('.png')]
@@ -83,6 +108,8 @@ class DeskPetG13(QtWidgets.QLabel):
         self.images = self.loadImages("DeskPetResources/dance")
         self.currentImage = 0
         self.timer.start(155)
+        # Set timer to call function after 5 seconds (5000 milliseconds)
+        self.popup_timer.singleShot(5000, lambda: self.show_popup(random.choice(["I am tired!","I am hungry!"]),self.dance))
 
     # implementation for exercise action
     def exercise(self):
@@ -144,8 +171,25 @@ class DeskPetG13(QtWidgets.QLabel):
         if event.button() == QtCore.Qt.LeftButton:
             self.dragging = False
             self.isDragging = False
-            self.prevAction()  # 或者 self.startIdle(), 根据之前的动作恢复状态
+            self.prevAction()
             event.accept()
+
+    def handleInput(self, inputText):
+        inputText = inputText.lower()
+        actions = {"idle": self.startIdle, "sleep": self.sleep, "dance": self.dance,"exercise": self.exercise, "eat": self.eat}
+        # Choose action based on the input
+        action = actions.get(inputText)
+        if action:  # input is among the possible actions
+            action()
+        else:  # unrecognized command
+            # Show an error pop-up dialog
+            msg = QtWidgets.QMessageBox()
+            msg.setIcon(QtWidgets.QMessageBox.Warning)
+            msg.setText(f"I do not know how to {inputText}! You can ask me to idle, sleep, dance, exercise or eat!")
+            msg.setWindowTitle("Error")
+            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msg.exec_()
+            pass
 
 
 class EasterEgg(QtWidgets.QWidget):
@@ -159,7 +203,7 @@ class EasterEgg(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         label = QtWidgets.QLabel("Group 13 Python Programming project")
         label.setAlignment(QtCore.Qt.AlignCenter)
-        description = QtWidgets.QLabel("Lin Yuqing\nLiu Zigen\nChen Shulin\nChen Zi\nDing Haoxuan")
+        description = QtWidgets.QLabel("Lin Yuqin\nLiu Zigen\nChen Shulin\nChen Zi\nDing Haoxuan")
         description.setAlignment(QtCore.Qt.AlignCenter)
         layout.addWidget(label)
         layout.addWidget(description)
